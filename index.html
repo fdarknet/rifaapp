@@ -145,14 +145,14 @@
         const num = document.getElementById('num-to-check').value;
         const phone = "+59169141575";
 
-        if (!name || !ci) return alert("Completa Apodo y CI es solo para verificar si ganas");
+        if (!name || !ci) return alert("Completa Apodo y PIN  es solo para verificar si ganas");
 
         // VALIDACIÓN DE LÍMITE (3 por CI)
         const qCI = query(collection(db, "tickets"), where("ci", "==", ci));
         const snapshotCI = await getDocs(qCI);
 
         if (snapshotCI.size >= 3) {
-            alert("Error: Este CI ya alcanzó el máximo de 3 tickets permitidos.");
+            alert("Error: Este PIN ya alcanzó el máximo de 3 tickets permitidos.");
             return;
         }
 
@@ -191,6 +191,7 @@
 </body>
 
 </html>
+
 
 
 
