@@ -81,8 +81,8 @@
 
     <div id="registration-form" style="display: none; padding: 20px; background: #f9f9f9; border-radius: 15px;">
         <h3>Paso 2: Tus datos</h3>
-        <input type="text" id="user-name" placeholder="Nombre completo">
-        <input type="text" id="user-ci" placeholder="Cédula de Identidad (CI)">
+        <input type="text" id="user-name" placeholder="Sólo un Apodo">
+        <input type="text" id="user-ci" placeholder="Un PIN que solo tu sepas para verivicar  (CI)">
         <p style="font-size: 0.8rem; color: #666;">* Máximo 3 tickets por persona.</p>
         <button class="btn-whatsapp" id="btn-wa" onclick="processTicket()">
             ✅ Confirmar y enviar WhatsApp - Sólo lleva una captura de tu cel del mensaje a la PROCLAMACION
@@ -145,7 +145,7 @@
         const num = document.getElementById('num-to-check').value;
         const phone = "+59169141575";
 
-        if (!name || !ci) return alert("Completa nombre y CI");
+        if (!name || !ci) return alert("Completa Apodo y CI es solo para verificar si ganas");
 
         // VALIDACIÓN DE LÍMITE (3 por CI)
         const qCI = query(collection(db, "tickets"), where("ci", "==", ci));
@@ -191,6 +191,7 @@
 </body>
 
 </html>
+
 
 
 
