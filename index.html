@@ -164,7 +164,7 @@
                 fecha: new Date()
             });
 
-            const message = `¡Hola! He reservado un ticket:%0A*Nombre:* ${name}%0A*CI:* ${ci}%0A*Número:* ${num}`;
+            const message = `¡Hola! He reservado un ticket:%0A*Nombre:* ${name}%0A*PIN:* ${ci}%0A*Número:* ${num}`;
             window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
             location.reload();
         } catch (e) { alert("Error al guardar"); }
@@ -191,6 +191,7 @@
 </body>
 
 </html>
+
 
 
 
