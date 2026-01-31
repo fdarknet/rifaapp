@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifa Pro - Control por CI</title>
+    <style>
+        :root {
+            --guindo: #800020; /* Color principal */
+            --verde: #25d366;  /* WhatsApp y acentos */
+            --blanco: #ffffff;
+            --disponible: #28a745;
+            --ocupado: #dc3545;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 650px; margin: 0 auto; background: var(--blanco); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-top: 8px solid var(--guindo); }
+        
+        h2, h3 { color: var(--guindo); text-align: center; }
+
+        /* Galería de 5 imágenes */
+        .gallery { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 25px; scrollbar-width: thin; }
+        .prize-item { min-width: 160px; background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 10px; text-align: center; transition: 0.3s; }
+        .prize-item:hover { border-color: var(--guindo); transform: translateY(-3px); }
+        .prize-item img { width: 100%; height: 110px; object-fit: cover; border-radius: 8px; }
+        .prize-item h4 { margin: 8px 0 0; font-size: 0.9rem; color: var(--guindo); }
+
+        /* Verificador */
+        .verifier-box { background: #fffcfc; padding: 20px; border: 2px solid #eee; border-radius: 15px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        input:focus { border-color: var(--guindo); outline: none; }
+        
+        .btn-check { background: var(--guindo); color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+        
+        /* Círculo de estado */
+        .status-panel { display: flex; flex-direction: column; align-items: center; margin: 15px 0; }
+        .circle { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 8px; }
+        .available { background: var(--disponible); box-shadow: 0 0 15px rgba(40, 167, 69, 0.3); }
+        .sold { background: var(--ocupado); box-shadow: 0 0 15px rgba(220, 53, 69, 0.3); }
+
+        /* Formulario y Registro */
+        .btn-whatsapp { background: var(--verde); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 10px; }
+        
+        /* Lista recientes */
+        .last-tickets { margin-top: 25px; background: #fdf2f4; padding: 15px; border-radius: 12px; border-left: 5px solid var(--guindo); }
+        .ticket-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ead6da; font-size: 0.85rem; }
+        .ticket-tag { background: var(--guindo); color: white; padding: 2px 10px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🎁 GRAN RIFA - YRRAEL TITO PEDRAZA</h2>
+    <h2>ALCALDE DE COTOCA 2026-2031</h2>
+
+    <div class="gallery">
+        <div class="prize-item">
+            <img src="https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=200" alt="Iphone">
+            <h4>iPhone 15</h4>
+        </div>
+        <div class="prize-item">
+            <img src="https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=200" alt="PS5">
+            <h4>PlayStation 5</h4>
+        </div>
+        <div class="prize-item">
+            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200" alt="Audifonos">
+            <h4>Audífonos BT</h4>
+        </div>
+    </div>
+
+    <div class="verifier-box">
+        <h3>Paso 1: Elige un número</h3>
+        <input type="number" id="num-to-check" placeholder="Número deseado (1000-5000)" min="1000" max="5000">
+        <button class="btn-check" onclick="verifyTicket()">Verificar Disponibilidad</button>
+
+        <div id="status-display" class="status-panel" style="display: none;">
+            <div id="status-circle" class="circle"></div>
+            <p id="status-text" style="font-weight: bold; margin: 0;"></p>
+        </div>
+    </div>
+
+    <div id="registration-form" style="display: none; padding: 20px; background: #f9f9f9; border-radius: 15px;">
+        <h3>Paso 2: Tus datos</h3>
+        <input type="text" id="user-name" placeholder="Nombre completo">
+        <input type="text" id="user-ci" placeholder="Cédula de Identidad (CI)">
+        <p style="font-size: 0.8rem; color: #666;">* Máximo 3 tickets por persona.</p>
+        <button class="btn-whatsapp" id="btn-wa" onclick="processTicket()">
+            ✅ Confirmar y enviar WhatsApp - !!RECUERDA!! lleva tu Cédula a la PROCLAMACION
+        </button>
+    </div>
+
+    <div class="last-tickets">
+        <h4 style="margin: 0 0 10px 0; color: var(--guindo);">🔥 Últimas adquisiciones:</h4>
+        <div id="recent-list">Cargando...</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY",
+        authDomain: "rifaapp-3367c.firebaseapp.com",
+        projectId: "rifaapp-3367c",
+        storageBucket: "rifaapp-3367c.appspot.com",
+        messagingSenderId: "384100599977",
+        appId: "TU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. Verificar número
+    window.verifyTicket = async function() {
+        const num = parseInt(document.getElementById('num-to-check').value);
+        const circle = document.getElementById('status-circle');
+        const text = document.getElementById('status-text');
+        const display = document.getElementById('status-display');
+        const regForm = document.getElementById('registration-form');
+
+        if (isNaN(num) || num < 1000 || num > 5000) return alert("Rango inválido");
+
+        const q = query(collection(db, "tickets"), where("numero", "==", num));
+        const snapshot = await getDocs(q);
+
+        display.style.display = "flex";
+        if (!snapshot.empty) {
+            circle.className = "circle sold";
+            text.innerText = "NÚMERO OCUPADO";
+            text.style.color = "var(--ocupado)";
+            regForm.style.display = "none";
+        } else {
+            circle.className = "circle available";
+            text.innerText = "NÚMERO DISPONIBLE";
+            text.style.color = "var(--disponible)";
+            regForm.style.display = "block";
+        }
+    }
+
+    // 2. Procesar y Validar Límite de CI
+    window.processTicket = async function() {
+        const name = document.getElementById('user-name').value;
+        const ci = document.getElementById('user-ci').value.trim();
+        const num = document.getElementById('num-to-check').value;
+        const phone = "+59167882360";
+
+        if (!name || !ci) return alert("Completa nombre y CI");
+
+        // VALIDACIÓN DE LÍMITE (3 por CI)
+        const qCI = query(collection(db, "tickets"), where("ci", "==", ci));
+        const snapshotCI = await getDocs(qCI);
+
+        if (snapshotCI.size >= 3) {
+            alert("Error: Este CI ya alcanzó el máximo de 3 tickets permitidos.");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "tickets"), {
+                nombre: name,
+                ci: ci,
+                numero: parseInt(num),
+                fecha: new Date()
+            });
+
+            const message = `¡Hola! He reservado un ticket:%0A*Nombre:* ${name}%0A*CI:* ${ci}%0A*Número:* ${num}`;
+            window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+            location.reload();
+        } catch (e) { alert("Error al guardar"); }
+    }
+
+    // 3. Cargar recientes
+    async function loadRecent() {
+        const recentDiv = document.getElementById('recent-list');
+        const q = query(collection(db, "tickets"), orderBy("fecha", "desc"), limit(5));
+        const snapshot = await getDocs(q);
+        recentDiv.innerHTML = "";
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            recentDiv.innerHTML += `
+                <div class="ticket-row">
+                    <span>👤 ${data.nombre}</span>
+                    <span class="ticket-tag">#${data.numero}</span>
+                </div>`;
+        });
+        if(snapshot.empty) recentDiv.innerText = "¡Sé el primero!";
+    }
+    loadRecent();
+</script>
+</body>
+</html>

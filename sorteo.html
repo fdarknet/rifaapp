@@ -1,0 +1,101 @@
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Sorteador Oficial - Rango 1000-5000</title>
+    <style>
+        :root { --guindo: #800020; --dorado: #D4AF37; --blanco: #ffffff; }
+        body { background: radial-gradient(circle, #2a2a2a, #000); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; overflow: hidden; }
+        .machine-card { background: #111; padding: 50px; border: 5px solid var(--dorado); border-radius: 30px; text-align: center; box-shadow: 0 0 50px rgba(212, 175, 55, 0.5); width: 600px; }
+        .reels { display: flex; gap: 20px; margin: 40px 0; justify-content: center; }
+        .reel-unit { display: flex; flex-direction: column; align-items: center; }
+        .digit { width: 100px; height: 140px; background: white; color: black; font-size: 6rem; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 15px; margin-bottom: 15px; transition: transform 0.1s; }
+        .stop-btn { background: #ff0000; color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100px; }
+        .stop-btn:disabled { background: #440000; cursor: not-allowed; }
+        .btn-main { background: var(--dorado); color: black; border: none; padding: 20px 50px; border-radius: 50px; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+        #winner-box { min-height: 80px; margin-top: 30px; font-size: 2.2rem; color: var(--dorado); text-shadow: 0 0 15px gold; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="machine-card">
+    <h1 style="color: var(--dorado); margin-bottom: 10px;">🎰 GRAN SORTEO</h1>
+    <p style="color: #aaa; margin-top: 0;">Rango de Tickets: 1000 - 5000</p>
+    
+    <div class="reels">
+        <div class="reel-unit"><div id="r1" class="digit">1</div><button id="b1" onclick="stopR(0)" class="stop-btn" disabled>PARAR</button></div>
+        <div class="reel-unit"><div id="r2" class="digit">0</div><button id="b2" onclick="stopR(1)" class="stop-btn" disabled>PARAR</button></div>
+        <div class="reel-unit"><div id="r3" class="digit">0</div><button id="b3" onclick="stopR(2)" class="stop-btn" disabled>PARAR</button></div>
+        <div class="reel-unit"><div id="r4" class="digit">0</div><button id="b4" onclick="stopR(3)" class="stop-btn" disabled>PARAR</button></div>
+    </div>
+    
+    <button onclick="startSpin()" id="btn-spin" class="btn-main">GIRAR TÓMBOLA</button>
+    <div id="winner-box"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = { 
+        apiKey: "TU_API_KEY", 
+        authDomain: "rifaapp-3367c.firebaseapp.com", 
+        projectId: "rifaapp-3367c", 
+        storageBucket: "rifaapp-3367c.appspot.com", 
+        messagingSenderId: "384100599977", 
+        appId: "TU_APP_ID" 
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let ints = [null, null, null, null];
+    let tickets = [];
+
+    window.startSpin = async function() {
+        document.getElementById('winner-box').innerText = "¡Mucha suerte!";
+        
+        // Desbloquear botones de parada
+        for(let i=1; i<=4; i++) document.getElementById(`b${i}`).disabled = false;
+
+        // Cargar tickets vendidos
+        const snap = await getDocs(collection(db, "tickets"));
+        tickets = snap.docs.map(d => d.data());
+
+        // Iniciar rotación
+        ints.forEach((_, i) => {
+            ints[i] = setInterval(() => {
+                const display = document.getElementById(`r${i+1}`);
+                if (i === 0) {
+                    // LÓGICA ESPECIAL: Primer dígito solo del 1 al 4
+                    display.innerText = Math.floor(Math.random() * 4) + 1; 
+                } else {
+                    // Otros dígitos del 0 al 9
+                    display.innerText = Math.floor(Math.random() * 10);
+                }
+            }, 50);
+        });
+        document.getElementById('btn-spin').disabled = true;
+    }
+
+    window.stopR = function(i) {
+        clearInterval(ints[i]); 
+        ints[i] = null;
+        document.getElementById(`b${i+1}`).disabled = true;
+
+        // Verificar si todos han parado
+        if (ints.every(v => v === null)) {
+            const res = parseInt(['r1','r2','r3','r4'].map(id => document.getElementById(id).innerText).join(''));
+            const win = tickets.find(t => t.numero === res);
+            
+            if (win) {
+                document.getElementById('winner-box').innerHTML = `🎉 GANADOR: ${win.nombre}<br><small style="font-size:1.2rem; color:white">CI: ${win.ci}</small>`;
+            } else {
+                document.getElementById('winner-box').innerText = `❌ El ${res} no fue reservado`;
+            }
+            document.getElementById('btn-spin').disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
